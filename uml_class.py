@@ -110,7 +110,7 @@ class UmlClassDiagram:
 
     def export_class_diagram(self, output_path="diagram.drawio"):
         """
-        Exports the UML class diagram as a Draw.io (diagrams.net) XML file using embedded SVG images for each class.
+        Exports the UML class diagram as a Draw.io (diagrams.net) XML file using embedded PNG images for each class.
         """
         def encode_image(image_path):
             try:
@@ -159,10 +159,24 @@ class UmlClassDiagram:
             label = relationship.label if relationship.label else ""
 
             if source_id and destination_id:
+                style = "edgeStyle=elbowEdgeStyle;rounded=1;"
+                if relationship.type == "extension":
+                    style += "endArrow=block;"
+                if relationship.type == "inheritance":
+                    style += "endArrow=block;"
+                elif relationship.type == "association":
+                    style += "endArrow=open;"
+                elif relationship.type == "dependency":
+                    style += "dashed=1;endArrow=open;"
+                elif relationship.type == "aggregation":
+                    style += "endArrow=diamond;"
+                elif relationship.type == "composition":
+                    style += "endArrow=diamond;fillColor=black;"
+                
                 edge = ET.SubElement(root, "mxCell", 
                     id=f"edge_{edge_counter}",  # Ensure unique ID
                     value=label,
-                    style="edgeStyle=elbowEdgeStyle;rounded=1;",
+                    style=style,
                     edge="1",
                     parent="1",
                     source=str(source_id),
