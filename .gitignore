@@ -1,0 +1,10 @@
+# python environment
+__pycache__
+.venv
+
+# input files
+input
+
+# output
+class_diagrams
+output
