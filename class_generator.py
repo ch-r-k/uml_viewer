@@ -1,4 +1,5 @@
 import subprocess
+import xml.etree.ElementTree as ET
 import os
 
 class ClassDiagramGenerator:
@@ -26,6 +27,8 @@ class ClassDiagramGenerator:
         skinparam classFontStyle Bold
         skinparam classFontColor Black
         skinparam shadowing false
+        skinparam Padding 0
+        skinparam Margin 0
         """
         
         class_declaration = "abstract class" if is_abstract else "class"
@@ -52,7 +55,34 @@ class ClassDiagramGenerator:
         with open(puml_filename, "w") as f:
             f.write(uml_code)
         
-        subprocess.run(["plantuml", "-tsvg", puml_filename])  # Generate SVG
+        subprocess.run(["plantuml", "-tsvg", "-tsvg:noclass", puml_filename]) # Generate SVG
+
+
+                # Parse the generated SVG file
+        with open(output_file, "r") as f:
+            svg_content = f.read()
+        
+        tree = ET.ElementTree(ET.fromstring(svg_content))
+        root = tree.getroot()
+        
+        # Find the class rectangle element
+        for rect in root.findall(".//{http://www.w3.org/2000/svg}rect"):
+            if "width" in rect.attrib and "height" in rect.attrib:
+                x = float(rect.attrib.get("x", 0))
+                y = float(rect.attrib.get("y", 0))
+                width = float(rect.attrib["width"])
+                height = float(rect.attrib["height"])
+                
+                # Update viewBox, width, and height
+                root.attrib["viewBox"] = f"{x} {y} {width} {height}"
+                root.attrib["width"] = f"{width}px"
+                root.attrib["height"] = f"{height}px"
+                
+                break  # Stop after the first class rect is found
+        
+        # Write back the modified SVG
+        with open(output_file, "w") as f:
+            f.write(ET.tostring(root, encoding="unicode"))
 
     def save_and_generate_png(self, uml_code, output_file):
         """
