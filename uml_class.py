@@ -1,8 +1,3 @@
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
-import matplotlib.patches as patches
-import networkx as nx
-from lxml import etree
 from PIL import Image
 import os
 import cairosvg
@@ -132,10 +127,8 @@ class UmlClassDiagram:
         # Create a mapping of class IDs to their corresponding XML elements
         class_id_map = {}
         edge_counter = 1  # Ensure unique edge IDs
-        class_counter = 2  # Ensure unique class IDs
 
         for uml_class in self.uml_classes:
-            class_id = str(class_counter)
             x, y = uml_class.position
             width, height = uml_class.size
             image_data = encode_image(uml_class.svg_path)
@@ -143,15 +136,15 @@ class UmlClassDiagram:
             if image_data:
                 img_src = f"data:image/svg+xml;base64,{image_data}"
                 class_node = ET.SubElement(root, "mxCell", 
-                    id=class_id,
+                    id=str(uml_class.class_id),
                     value=f"<img width=\"{width}\" height=\"{height}\" src=\"{img_src}\">",
                     style="rounded=0;whiteSpace=wrap;html=1;",
                     vertex="1",
                     parent="1")
 
                 ET.SubElement(class_node, "mxGeometry", x=str(x), y=str(y), width=str(width), height=str(height), **{"as": "geometry"})
-                class_id_map[uml_class.class_id] = class_id
-                class_counter += 1
+                class_id_map[uml_class.class_id] = str(uml_class.class_id)
+
 
         for relationship in self.relationships:
             source_id = class_id_map.get(relationship.source)
@@ -191,3 +184,51 @@ class UmlClassDiagram:
         tree.write(output_path, encoding="utf-8", xml_declaration=True)
 
         print(f"Class diagram exported as {output_path}")
+
+
+    def update_positions_from_drawio(self, drawio_path, positions_data):
+        """
+        Reads the class positions from the Draw.io file and updates positions_data.
+        """
+        try:
+            tree = ET.parse(drawio_path)
+            root = tree.getroot()
+            
+            # Extract the mxGraphModel root
+            diagram = root.find("diagram")
+            if diagram is None:
+                print("Invalid Draw.io file: No diagram element found.")
+                return
+            
+            mxGraphModel = diagram.find("mxGraphModel")
+            if mxGraphModel is None:
+                print("Invalid Draw.io file: No mxGraphModel element found.")
+                return
+            
+            mx_cells = mxGraphModel.findall(".//mxCell")
+            id_to_position = {}
+            
+            # Parse positions
+            for cell in mx_cells:
+                geometry = cell.find("mxGeometry")
+                if geometry is not None and cell.get("vertex") == "1":
+                    class_id = cell.get("id")
+                    x = float(geometry.get("x", 0))
+                    y = float(geometry.get("y", 0))
+                    id_to_position[class_id] = (x, y)
+            
+            def find_by_id(uml_classes, class_id):
+                for uml_class in uml_classes:
+                    if uml_class.class_id == class_id:
+                        return uml_class
+                return None  # Return None if not found
+
+            # Update positions_data
+            for class_data in positions_data['classes']:
+                class_id = str(class_data['id'])
+                uml_class = find_by_id(self.uml_classes, class_id)
+                uml_class.position = id_to_position[class_id]
+            
+            print("Positions updated successfully from Draw.io file.")
+        except Exception as e:
+            print(f"Error reading Draw.io file: {e}")
