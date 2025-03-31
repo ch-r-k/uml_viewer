@@ -5,6 +5,7 @@ import matplotlib
 import numpy as np
 import xml.etree.ElementTree as ET
 import base64
+import graphviz
 
 class UmlRelationship:
     def __init__(self, source, destination, relationship_type, access, label=None):
@@ -232,3 +233,45 @@ class UmlClassDiagram:
             print("Positions updated successfully from Draw.io file.")
         except Exception as e:
             print(f"Error reading Draw.io file: {e}")
+
+
+    def export_to_graphviz(self, output_path="diagram.gv"):
+        """
+        Exports the UML class diagram to a Graphviz DOT file with positions.
+        """
+        dot = graphviz.Digraph("UML_Class_Diagram", format="png")
+        dot.attr(overlap="false")  # Avoid node overlap
+        dot.attr(layout="neato")   # Use neato for manual positioning
+
+        # Add classes as nodes with positions
+        for uml_class in self.uml_classes:
+            methods_formatted = "\\l".join(method.get("name", "") if isinstance(method, dict) else str(method) for method in uml_class.methods) + "\\l" if uml_class.methods else ""
+            label = f"{{ {uml_class.name} | {methods_formatted} }}"
+            shape = "record" if uml_class.methods else "box"
+            pos = f"{uml_class.position[0]},{uml_class.position[1]}!"  # Graphviz fixed position format
+            width = max(uml_class.size[0] / 100, 3)  # Scale width
+            height = max(uml_class.size[1] / 100, 3)  # Scale height
+            dot.node(uml_class.class_id, label=label, shape=shape, pos=pos, width=str(width), height=str(height), fontsize="14")
+
+        # Add relationships as edges
+        for relationship in self.relationships:
+            style = "solid"
+            arrowhead = "none"
+
+            if relationship.type == "inheritance":
+                arrowhead = "empty"
+            elif relationship.type == "association":
+                arrowhead = "open"
+            elif relationship.type == "dependency":
+                style = "dashed"
+                arrowhead = "open"
+            elif relationship.type == "aggregation":
+                arrowhead = "diamond"
+            elif relationship.type == "composition":
+                arrowhead = "diamond"
+                style = "bold"
+
+            dot.edge(relationship.source, relationship.destination, label=relationship.label or "", style=style, arrowhead=arrowhead)
+
+        dot.render(output_path, format="svg")
+        print(f"Graphviz UML diagram exported as {output_path}.svg")

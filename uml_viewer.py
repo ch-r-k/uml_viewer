@@ -44,3 +44,4 @@ if __name__ == "__main__":
 
     # Export the diagram to a single SVG file
     classDiagram.export_class_diagram(output_path="output/diagram.drawio")
+    classDiagram.export_to_graphviz(output_path="output/diagram.gv")
