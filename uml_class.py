@@ -1,11 +1,14 @@
 from PIL import Image
 import os
 import cairosvg
-import matplotlib
+import matplotlib.pyplot as plt
+from networkx.drawing.nx_agraph import graphviz_layout
 import numpy as np
 import xml.etree.ElementTree as ET
 import base64
 import graphviz
+
+
 
 class UmlRelationship:
     def __init__(self, source, destination, relationship_type, access, label=None):
@@ -20,7 +23,7 @@ class UmlRelationship:
 
 
 class UmlClass:
-    def __init__(self, class_id, name, methods, is_abstract, position, size, svg_path):
+    def __init__(self, class_id, name, methods, is_abstract, position, size, svg_path, png_path):
         self.class_id = class_id
         self.name = name
         self.methods = methods
@@ -28,13 +31,14 @@ class UmlClass:
         self.position = position  # tuple (x, y)
         self.size = size
         self.svg_path = svg_path
+        self.png_path = png_path
         self.relationships = []  # List to store relationships
 
     def add_relationship(self, relationship):
         self.relationships.append(relationship)
 
     def __repr__(self):
-        return f"UmlClass({self.class_id}, {self.name}, {self.position}, {self.svg_path})"
+        return f"UmlClass({self.class_id}, {self.name}, {self.position}, {self.svg_path}, {self.png_path})"
 
 
 class UmlClassDiagram:
@@ -42,8 +46,6 @@ class UmlClassDiagram:
         self.class_folder = class_folder
         self.uml_classes = []
         self.relationships = []
-
-        matplotlib.use("TkAgg")  # or "Qt5Agg"
 
     def load_uml_classes(self, class_data, positions_data):
         """
@@ -70,10 +72,11 @@ class UmlClassDiagram:
                     is_abstract = class_data_item.get('is_abstract', False)
                     position = positions.get(class_id, (0, 0))  # Fixed position from input data
                     svg_path = os.path.join(self.class_folder, f"{class_id}.svg")
+                    png_path = os.path.join(self.class_folder, f"{class_id}.png")
                     
                     size = get_svg_size(svg_path) if os.path.exists(svg_path) else (100, 200)
                     
-                    uml_class = UmlClass(class_id, name, methods, is_abstract, position, size, svg_path)
+                    uml_class = UmlClass(class_id, name, methods, is_abstract, position, size, svg_path, png_path)
                     self.uml_classes.append(uml_class)
 
                 if "elements" in class_data_item:
@@ -235,25 +238,32 @@ class UmlClassDiagram:
             print(f"Error reading Draw.io file: {e}")
 
 
+
     def export_to_graphviz(self, output_path="diagram.gv"):
         """
-        Exports the UML class diagram to a Graphviz DOT file with positions.
+        Exports the UML class diagram to a Graphviz DOT file with curved edges.
         """
-        dot = graphviz.Digraph("UML_Class_Diagram", format="png")
+        dot = graphviz.Digraph("UML_Class_Diagram", format="svg")
         dot.attr(overlap="false")  # Avoid node overlap
-        dot.attr(layout="neato")   # Use neato for manual positioning
+        dot.attr(layout="nop2")   # Use neato for manual positioning
+        dot.attr(splines="curved")  # Enables curved edges
+        dot.attr(inputscale="1")  # Enables curved edges
 
         # Add classes as nodes with positions
         for uml_class in self.uml_classes:
-            methods_formatted = "\\l".join(method.get("name", "") if isinstance(method, dict) else str(method) for method in uml_class.methods) + "\\l" if uml_class.methods else ""
-            label = f"{{ {uml_class.name} | {methods_formatted} }}"
-            shape = "record" if uml_class.methods else "box"
-            pos = f"{uml_class.position[0]},{uml_class.position[1]}!"  # Graphviz fixed position format
-            width = max(uml_class.size[0] / 100, 3)  # Scale width
-            height = max(uml_class.size[1] / 100, 3)  # Scale height
-            dot.node(uml_class.class_id, label=label, shape=shape, pos=pos, width=str(width), height=str(height), fontsize="14")
+            pos = f"{uml_class.position[0]},{-uml_class.position[1]}!"  # Graphviz fixed position format
+            width = uml_class.size[0]
+            height = uml_class.size[1] 
+            
+            if uml_class.svg_path and os.path.exists(uml_class.png_path):
+                dot.node(uml_class.class_id, image="../" + uml_class.png_path, shape="none", pos=pos, imagescale="true")
+            else:
+                methods_formatted = "\\l".join(method.get("name", "") if isinstance(method, dict) else str(method) for method in uml_class.methods) + "\\l" if uml_class.methods else ""
+                label = f"{{ {uml_class.name} | {methods_formatted} }}"
+                shape = "record" if uml_class.methods else "box"
+                dot.node(uml_class.class_id, label=label, shape=shape, pos=pos, width=str(width), height=str(height), fontsize="1")
 
-        # Add relationships as edges
+        # Add relationships as curved edges
         for relationship in self.relationships:
             style = "solid"
             arrowhead = "none"
@@ -271,7 +281,8 @@ class UmlClassDiagram:
                 arrowhead = "diamond"
                 style = "bold"
 
-            dot.edge(relationship.source, relationship.destination, label=relationship.label or "", style=style, arrowhead=arrowhead)
+            dot.edge(relationship.source, relationship.destination, label=relationship.label or "", style=style, arrowhead=arrowhead, constraint="false")
 
-        dot.render(output_path, format="svg")
-        print(f"Graphviz UML diagram exported as {output_path}.svg")
+        dot.render(output_path, format="png")
+        print(f"Graphviz UML diagram exported as {output_path}.png")
+

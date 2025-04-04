@@ -30,17 +30,17 @@ if __name__ == "__main__":
     with open('input/blinky_positions.json', 'w') as positions_output:
         json.dump(positions_data, positions_output, indent=4)
 
-    # Step 3: Generate the SVG files for each class
+    # # Step 3: Generate the SVG and PNG files for each class
     output_folder = 'class_diagrams'
-    for root, dirs, files in os.walk(output_folder, topdown=False):
-       for name in files:
-           os.remove(os.path.join(root, name))  # Delete each file
-       for name in dirs:
-           os.rmdir(os.path.join(root, name))  # Delete each directory
+    # for root, dirs, files in os.walk(output_folder, topdown=False):
+    #    for name in files:
+    #        os.remove(os.path.join(root, name))  # Delete each file
+    #    for name in dirs:
+    #        os.rmdir(os.path.join(root, name))  # Delete each directory
     
-    generator = ClassDiagramGenerator(output_folder=output_folder)  # Instantiate the generator
-    for uml_class in classDiagram.uml_classes:
-       generator.process_uml_classes(uml_class)  # Generate SVG for each UML class
+    # generator = ClassDiagramGenerator(output_folder=output_folder)  # Instantiate the generator
+    # for uml_class in classDiagram.uml_classes:
+    #    generator.process_uml_classes(uml_class)  # Generate SVG and PNG for each UML class
 
     # Export the diagram to a single SVG file
     classDiagram.export_class_diagram(output_path="output/diagram.drawio")

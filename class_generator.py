@@ -96,7 +96,7 @@ class ClassDiagramGenerator:
             f.write(uml_code)
         
         subprocess.run(["plantuml", "-tpng", puml_filename])  # Generate PNG
-
+    
     def process_uml_classes(self, uml_class):
         """
         Processes a list of UmlClass objects, generating PlantUML code and saving corresponding SVG files.
@@ -112,8 +112,16 @@ class ClassDiagramGenerator:
         uml_code = self.generate_plantuml(uml_class)
         
         # Define the output file path in the specified folder
-        output_file = os.path.join(self.output_folder, f"{uml_class.class_id}.svg")
+        output_file_svg = os.path.join(self.output_folder, f"{uml_class.class_id}.svg")
         
         # Save the UML code and generate the SVG
-        self.save_and_generate_svg(uml_code, output_file)
-        print(f"Class diagram saved as {output_file}")
+        self.save_and_generate_svg(uml_code, output_file_svg)
+        print(f"Class diagram saved as {output_file_svg}")
+
+        # Define the output file path in the specified folder
+        output_file_png = os.path.join(self.output_folder, f"{uml_class.class_id}.png")
+
+        # Save the UML code and generate the PNG
+        self.save_and_generate_png(uml_code, output_file_png)
+        print(f"Class diagram saved as {output_file_png}")
+        
