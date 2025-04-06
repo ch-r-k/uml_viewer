@@ -24,7 +24,7 @@ class GraphvizUmlExporter(UmlExporter):
                 pass
 
     def export(self, classes: list[UmlClass], relationships: list[UmlRelationship], output_path: str):
-        dot = graphviz.Digraph("UML_Class_Diagram", format="svg")
+        dot = graphviz.Digraph("UML_Class_Diagram", format="png")
         dot.attr(overlap="false", layout="nop2", splines="curved", inputscale="1")
 
         for uml_class in classes:
@@ -39,10 +39,12 @@ class GraphvizUmlExporter(UmlExporter):
                 temp_file.close()
                 self._temp_files.append(temp_file.name)
 
+                # Embed the PNG file as an image, and explicitly set the label to an empty string
                 dot.node(
-                    uml_class.class_id,
-                    image=temp_file.name,
-                    shape="none",
+                    uml_class.class_id,  # Unique node id
+                    image=temp_file.name,  # Set image, not label
+                    label="",  # Set label to an empty string to avoid printing the file path
+                    shape="none",  # Use 'none' to avoid Graphviz adding any default label
                     pos=pos,
                     imagescale="true"
                 )
