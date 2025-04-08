@@ -19,9 +19,7 @@ class JsonUmlImporter(UmlImporter):
         self.load_class(class_data['elements'])
         self.load_relationships(class_data['relationships'])
 
-
         return  self.uml_classes, self.relationships
-
     
     def import_posittions(self, input_path:str):
         with open(input_path, 'r') as json_input:
@@ -34,25 +32,34 @@ class JsonUmlImporter(UmlImporter):
     # -------------------------------------------------------------
 
     def load_class(self, class_data):
-        def process_elements(elements):
+        def process_elements(elements, group_path):
             for class_data_item in elements:
+                display_name = class_data_item.get("display_name", "")
+
+                # Build new group path for this element level
+                current_group_path = group_path + [display_name] if display_name else group_path
+
                 if class_data_item.get("type") == "class":
                     class_id = class_data_item['id']
                     name = class_data_item['name']
                     methods = class_data_item.get('methods', [])
-                    position = (0.0,0.0)
-                    is_abstract = False
+                    is_abstract = class_data_item.get("is_abstract", False)
+
+                    position = (0.0, 0.0)
+                    size = (0.0, 0.0)
                     svg_data = []
                     png_data = []
-                    size = (0.0,0.0)
-                    
-                    uml_class = UmlClass(class_id, name, methods, is_abstract, position, size, svg_data, png_data)
+
+                    # Join the group path for display or keep it as list depending on UmlClass constructor
+                    groups = current_group_path
+
+                    uml_class = UmlClass(class_id, name, methods, is_abstract, groups, position, size, svg_data, png_data)
                     self.uml_classes.append(uml_class)
 
                 if "elements" in class_data_item:
-                    process_elements(class_data_item["elements"])
+                    process_elements(class_data_item["elements"], current_group_path)
 
-        process_elements(class_data)
+        process_elements(class_data, [])
     
     def load_relationships(self, relationships_data):        
         for relationship in relationships_data:

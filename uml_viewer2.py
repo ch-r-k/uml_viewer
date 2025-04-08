@@ -18,7 +18,7 @@ def main():
     umlClassDiagram.gernate_classes()
     umlClassDiagram.export_diagram()
 
-    print("✅ Done: Draw.io diagram generated!")
+    print("✅ Done")
 
 
 if __name__ == "__main__":

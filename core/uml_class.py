@@ -7,6 +7,7 @@ class UmlClass:
                  name: str, 
                  methods: List[str], 
                  is_abstract: bool, 
+                 groups: List[str], 
                  position: Tuple[float, float], 
                  size: Tuple[float, float], 
                  svg_data,
@@ -16,6 +17,7 @@ class UmlClass:
         self.name = name
         self.methods = methods
         self.is_abstract = is_abstract
+        self.groups = groups
         self.position = position
         self.size = size
         self.svg_data = svg_data

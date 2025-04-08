@@ -25,37 +25,59 @@ class GraphvizUmlExporter(UmlExporter):
 
     def export(self, classes: list[UmlClass], relationships: list[UmlRelationship], output_path: str):
         dot = graphviz.Digraph("UML_Class_Diagram", format="png")
-        dot.attr(overlap="false", layout="nop2", splines="curved", inputscale="1")
+        dot.attr(overlap="false", layout="neato", splines="curved", mode="exact", inputscale="1")
+
+        # Add global spacing and node padding
+        dot.attr("graph", nodesep="1.0", ranksep="20", margin="0.5")
+
+        # Step 1: Organize classes into a tree based on group path
+        class_group_tree = {}
 
         for uml_class in classes:
-            pos = f"{uml_class.position[0]},{-uml_class.position[1]}!"
+            node = class_group_tree
+            for group in uml_class.groups:
+                node = node.setdefault(group, {})
+            node.setdefault("_classes", []).append(uml_class)
 
-            if uml_class.png_data:
-                # Write png_data to a temporary file inside the custom temp folder
-                temp_file = tempfile.NamedTemporaryFile(
-                    dir=self.temp_dir, suffix=".png", delete=False
-                )
-                temp_file.write(uml_class.png_data)
-                temp_file.close()
-                self._temp_files.append(temp_file.name)
+        # Step 2: Recursive function to add clusters and class nodes
+        def add_clusters(parent_graph, group_dict, prefix=""):
+            for group_name, subgroups in group_dict.items():
+                if group_name == "_classes":
+                    for uml_class in subgroups:
+                        pos = f"{uml_class.position[0]},{-uml_class.position[1]}!"
+                        if uml_class.png_data:
+                            temp_file = tempfile.NamedTemporaryFile(
+                                dir=self.temp_dir, suffix=".png", delete=False
+                            )
+                            temp_file.write(uml_class.png_data)
+                            temp_file.close()
+                            self._temp_files.append(temp_file.name)
 
-                # Embed the PNG file as an image, and explicitly set the label to an empty string
-                dot.node(
-                    uml_class.class_id,  # Unique node id
-                    image=temp_file.name,  # Set image, not label
-                    label="",  # Set label to an empty string to avoid printing the file path
-                    shape="none",  # Use 'none' to avoid Graphviz adding any default label
-                    pos=pos,
-                    imagescale="true"
-                )
-            else:
-                methods = "\\l".join(
-                    method.get("name", "") if isinstance(method, dict) else str(method)
-                    for method in uml_class.methods
-                ) + "\\l"
-                label = f"{{ {uml_class.name} | {methods} }}"
-                dot.node(uml_class.class_id, label=label, shape="record", pos=pos)
+                            parent_graph.node(
+                                uml_class.class_id,
+                                image=temp_file.name,
+                                label="",
+                                shape="none",
+                                pos=pos,
+                                imagescale="true",
+                            )
+                        else:
+                            methods = "\\l".join(
+                                method.get("name", "") if isinstance(method, dict) else str(method)
+                                for method in uml_class.methods
+                            ) + "\\l"
+                            label = f"{{ {uml_class.name} | {methods} }}"
+                            parent_graph.node(uml_class.class_id, label=label, shape="record", pos=pos)
+                else:
+                    cluster_name = f"cluster_{prefix}{group_name}"
+                    with parent_graph.subgraph(name=cluster_name) as sub:
+                        sub.attr(label=group_name, style="rounded", color="black", margin="50")
+                        add_clusters(sub, subgroups, prefix=f"{prefix}{group_name}_")
 
+        # Step 3: Build nested clusters
+        add_clusters(dot, class_group_tree)
+
+        # Step 4: Draw relationships
         for rel in relationships:
             style, arrowhead = "solid", "none"
             if rel.type == "inheritance":
