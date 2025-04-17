@@ -96,10 +96,54 @@ class PlantUmlClassDiagramGenerator(ClassImageGenerator):
         # Get the modified SVG content
         svg_content_modified = ET.tostring(root, encoding="utf-8").decode('utf-8')
 
+        # claen up
+        svg_content_modified = self.clean_svg(svg_content_modified)
+
         # Save the modified SVG content
         self._temp_files.append(svg_path)
         return svg_content_modified 
 
+    def clean_svg(self, svg_content: str) -> str:
+        """
+        Cleans SVG content for compatibility with Graphviz.
+        Strips problematic attributes and enforces unit conventions.
+        """
+        try:
+            root = ET.fromstring(svg_content)
+
+            # Clean up <svg> attributes
+            root.attrib.pop('style', None)
+            root.attrib.pop('zoomAndPan', None)
+            root.attrib.pop('contentScriptType', None)
+            root.attrib.pop('contentStyleType', None)
+            
+            # Set width and height with pt unit for Graphviz compatibility
+            width = root.get('width', '').replace('px', '').strip()
+            height = root.get('height', '').replace('px', '').strip()
+            if width:
+                root.set('width', f"{width}pt")
+            if height:
+                root.set('height', f"{height}pt")
+
+            # Remove comments inside SVG
+            for elem in list(root.iter()):
+                if isinstance(elem.tag, str) and elem.tag.startswith('<!--'):
+                    root.remove(elem)
+
+            # Remove comment nodes manually (not supported by ElementTree directly)
+            def remove_comments(e):
+                for sub in list(e):
+                    if isinstance(sub.tag, str):
+                        remove_comments(sub)
+                    elif ET.iselement(sub) and sub.tag is ET.Comment:
+                        e.remove(sub)
+            remove_comments(root)
+
+            return ET.tostring(root, encoding="utf-8").decode("utf-8")
+        except ET.ParseError as e:
+            print("Failed to clean SVG:", e)
+            return svg_content
+        
     def generate_png_from_puml(self, uml_code):
         # First, generate the SVG content from the UML code
         svg_content = self.generate_svg_from_puml(uml_code)

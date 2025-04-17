@@ -11,7 +11,8 @@ class UmlClass:
                  position: Tuple[float, float], 
                  size: Tuple[float, float], 
                  svg_data,
-                 png_data):
+                 png_data,
+                 code_data):
         
         self.class_id = class_id
         self.name = name
@@ -22,3 +23,4 @@ class UmlClass:
         self.size = size
         self.svg_data = svg_data
         self.png_data = png_data
+        self.code_data = code_data

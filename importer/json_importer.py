@@ -49,11 +49,12 @@ class JsonUmlImporter(UmlImporter):
                     size = (0.0, 0.0)
                     svg_data = []
                     png_data = []
+                    code_data = []
 
                     # Join the group path for display or keep it as list depending on UmlClass constructor
                     groups = current_group_path
 
-                    uml_class = UmlClass(class_id, name, methods, is_abstract, groups, position, size, svg_data, png_data)
+                    uml_class = UmlClass(class_id, name, methods, is_abstract, groups, position, size, svg_data, png_data, code_data)
                     self.uml_classes.append(uml_class)
 
                 if "elements" in class_data_item:

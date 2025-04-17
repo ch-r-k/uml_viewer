@@ -8,6 +8,7 @@ from core.uml_relationshpi import UmlRelationship
 
 from importer.json_importer import JsonUmlImporter
 from class_generators.plantuml_class_generator import PlantUmlClassDiagramGenerator
+from class_generators.graphviz_class_generator import GraphvizClassDiagramGenerator
 from export.drawio_exporter import DrawioUmlExporter
 from export.graphviz_exporter import GraphvizUmlExporter
 
@@ -17,6 +18,7 @@ class UmlClassDiagram:
         self.relationships: List[UmlRelationship] = [] 
         self.json_importer = JsonUmlImporter()  # Create an instance of JsonUmlImporter
         self.class_generator = PlantUmlClassDiagramGenerator()
+        self.class_generator_graphviz = GraphvizClassDiagramGenerator()
         self.exporter = DrawioUmlExporter()
         self.exporter_graphviz = GraphvizUmlExporter()
 
@@ -28,14 +30,17 @@ class UmlClassDiagram:
 
     def gernate_classes(self):
         for element in self.uml_classes:
-            png_data = self.class_generator.generate_png(element)
+            png_data = self.class_generator_graphviz.generate_png(element)
             element.png_data = png_data
 
-            svg_data = self.class_generator.generate_svg(element)
-            element.svg_data = svg_data
+            svg_data = self.class_generator_graphviz.generate_svg(element)
+            element.svg_data = svg_data["svg"]
+
+            code_data = self.class_generator_graphviz.generate_graphviz_code(element)
+            element.code_data = code_data
 
             # Extract width and height from the SVG data
-            width, height = self._extract_svg_size(svg_data)
+            width, height = self._extract_svg_size(svg_data["svg"])
             element.size = (width, height)
 
     def export_diagram(self):
