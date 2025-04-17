@@ -36,12 +36,10 @@ class UmlClassDiagram:
             svg_data = self.class_generator_graphviz.generate_svg(element)
             element.svg_data = svg_data["svg"]
 
-            code_data = self.class_generator_graphviz.generate_graphviz_code(element)
+            code_data = self.class_generator_graphviz.generate_graphviz_lable(element)
             element.code_data = code_data
 
-            # Extract width and height from the SVG data
-            width, height = self._extract_svg_size(svg_data["svg"])
-            element.size = (width, height)
+            element.size = (svg_data["width"], svg_data["height"])
 
     def export_diagram(self):
         self.exporter.export(self.uml_classes, self.relationships, "output/test.drawio")

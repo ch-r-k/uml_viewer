@@ -34,7 +34,18 @@ class GraphvizClassDiagramGenerator(ClassImageGenerator):
                 {uml_class.class_id} [label="{label}"];
             }}
         """
-        return dot_code.strip()
+        return dot_code
+    
+    def generate_graphviz_lable(self, uml_class: UmlClass) -> str:
+        methods = "\\l".join(
+            method.get("name", "") if isinstance(method, dict) else str(method)
+            for method in uml_class.methods
+        ) + "\\l"
+
+        label = f"{{ {uml_class.name} | {methods} }}"
+        uml_class.label = label  # 👈 Store the label for later use
+
+        return label
 
     def generate_svg(self, uml_class: UmlClass):
         dot_code = self.generate_graphviz_code(uml_class)

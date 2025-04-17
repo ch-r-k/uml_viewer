@@ -51,14 +51,16 @@ class GraphvizUmlExporter(UmlExporter):
                         # Main class node
                         parent_graph.node(
                             str(uml_class.class_id),
-                            label=uml_class.name,
+                            label=uml_class.code_data,
                             shape="record",
                             pos=pos
                         )
 
                         # Add invisible padding node to push cluster box away
-                        pad_x = (uml_class.size[0] + 40) / 96  # width in inches + buffer
-                        pad_y = (uml_class.size[1] + 40) / 96  # height in inches + buffer
+                        margin = 70.0 / 96.0
+                        pad_x = (uml_class.size[0] / 70.0) + margin
+                        pad_y = (uml_class.size[1] / 70.0) + margin
+                        pos = f"{x},{y}!"
 
                         parent_graph.node(
                             f"{uml_class.class_id}_padding",
@@ -66,8 +68,8 @@ class GraphvizUmlExporter(UmlExporter):
                             shape="box",
                             width=str(pad_x),
                             height=str(pad_y),
-                            style="invis",
                             fixedsize="true",
+                            style = "invis",
                             pos=pos
                         )
                 else:
