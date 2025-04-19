@@ -11,6 +11,7 @@ from class_generators.plantuml_class_generator import PlantUmlClassDiagramGenera
 from class_generators.graphviz_class_generator import GraphvizClassDiagramGenerator
 from export.drawio_exporter import DrawioUmlExporter
 from export.graphviz_exporter import GraphvizUmlExporter
+from placing_tool.placing_tool import DrawioPositionTool
 
 class UmlClassDiagram:
     def __init__(self):
@@ -21,12 +22,15 @@ class UmlClassDiagram:
         self.class_generator_graphviz = GraphvizClassDiagramGenerator()
         self.exporter = DrawioUmlExporter()
         self.exporter_graphviz = GraphvizUmlExporter()
+        self.tool = DrawioPositionTool()
+        self.position_file = ""
 
     def import_file(self, file):
         self.uml_classes, self.relationships = JsonUmlImporter.import_classes_and_relationships(self.json_importer, file)
 
     def import_positions(self, file):
         self.uml_classes = JsonUmlImporter.import_posittions(self.json_importer, file)
+        self.position_file = file
 
     def gernate_classes(self):
         for element in self.uml_classes:
@@ -45,6 +49,9 @@ class UmlClassDiagram:
         self.exporter.export(self.uml_classes, self.relationships, "output/test.drawio")
         self.exporter_graphviz.export(self.uml_classes, self.relationships, "output/test.gv")
 
+    def place(self):
+        self.uml_classes = self.tool.run(self.uml_classes, self.relationships, "diagram.drawio")
+        self.json_importer.save_positions(self.uml_classes, self.position_file)
 
     def _extract_svg_size(self, svg_data: str) -> Tuple[float, float]:
         width_match = re.search(r'width="([\d.]+)([a-z]*)"', svg_data)

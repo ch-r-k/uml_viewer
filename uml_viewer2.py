@@ -16,6 +16,7 @@ def main():
     umlClassDiagram.import_file(json_path_data)
     umlClassDiagram.import_positions(json_path_pos)
     umlClassDiagram.gernate_classes()
+    umlClassDiagram.place()
     umlClassDiagram.export_diagram()
 
     print("✅ Done")

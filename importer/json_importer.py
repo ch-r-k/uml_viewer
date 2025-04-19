@@ -29,6 +29,21 @@ class JsonUmlImporter(UmlImporter):
 
         return self.uml_classes
     
+    def save_positions(self, uml_classes: List[UmlClass], file_path: str):
+        classes_data = []
+        for element in uml_classes:
+            classes_data.append({
+                "id": element.class_id,  # Make sure this matches your actual UmlClass attributes
+                "name": element.name,
+                "position": {
+                    "x": element.position[0],
+                    "y": element.position[1]
+                }
+            })
+
+        with open(file_path, 'w') as f:
+            json.dump({"classes": classes_data}, f, indent=4)
+    
     # -------------------------------------------------------------
 
     def load_class(self, class_data):
@@ -76,18 +91,20 @@ class JsonUmlImporter(UmlImporter):
 
 
     def load_positions(self, position_data):
-        # Loop through the position data and assign positions to corresponding UmlClass objects
+        # Get the list of class position entries from the wrapped "classes" key
+
         for position_item in position_data:
             class_id = position_item['id']
-            position = (position_item['x'], position_item['y'])
-            
+            position = (
+                position_item['position']['x'],
+                position_item['position']['y']
+            )
+
             # Find the UmlClass with the matching class_id
             uml_class = next((uc for uc in self.uml_classes if uc.class_id == class_id), None)
-            
+
             if uml_class:
-                # Assign the position to the matching UmlClass object
                 uml_class.position = position
             else:
-                # Optionally log or handle classes not found in the UmlClass list
                 print(f"Warning: UmlClass with ID {class_id} not found.")
     
