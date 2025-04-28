@@ -53,7 +53,9 @@ class GraphvizUmlExporter(UmlExporter):
                             str(uml_class.class_id),
                             label=uml_class.code_data,
                             shape="record",
-                            pos=pos
+                            pos=pos,
+                            style="filled",  # Changed from "invis" to "filled"
+                            fillcolor="lightgray",
                         )
 
                         # Add invisible padding node to push cluster box away

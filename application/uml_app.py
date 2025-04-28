@@ -40,7 +40,7 @@ class UmlClassDiagram:
             svg_data = self.class_generator_graphviz.generate_svg(element)
             element.svg_data = svg_data["svg"]
 
-            code_data = self.class_generator_graphviz.generate_graphviz_lable(element)
+            code_data = self.class_generator_graphviz.generate_graphviz_label(element)
             element.code_data = code_data
 
             element.size = (svg_data["width"], svg_data["height"])
